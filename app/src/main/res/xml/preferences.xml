@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <PreferenceCategory
+        android:title="Bookshelf Dimensions"
+        android:key="pref_bookshelf_dim">
+        <EditTextPreference
+            android:title="Number of rows"
+            android:key="row_num"
+            android:summary="Please enter number of rows in the bookshelf"
+            android:inputType="numberDecimal"
+            android:defaultValue="1"
+            />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Row Dimensions"
+        android:key="pref_row_dim">
+
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Light Dimensions"
+        android:key="pref_light_dim">
+        <EditTextPreference
+            android:title="LED Width"
+            android:key="ledWidth"
+            android:summary="Distance between each LED"
+            android:inputType="numberDecimal"
+            />
+        <EditTextPreference
+            android:title="Number of LEDs"
+            android:key="numLeds"
+            android:summary="Number of LEDs per row"
+            android:inputType="numberDecimal"
+            />
+        <EditTextPreference
+            android:title="Offset"
+            android:key="offset"
+            android:summary="Distance from the first LED to the edge of the shelf"
+            android:inputType="numberDecimal"
+            />
+    </PreferenceCategory>
+
+</PreferenceScreen>

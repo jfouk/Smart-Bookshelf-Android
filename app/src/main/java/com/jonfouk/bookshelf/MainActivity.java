@@ -1,21 +1,29 @@
 package com.jonfouk.bookshelf;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.jonfouk.bookshelf.BookshelfMgr.Book;
 import com.jonfouk.bookshelf.BookshelfMgr.BookRVAdapter;
 import com.jonfouk.bookshelf.BookshelfMgr.BookShelf;
@@ -47,19 +55,37 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // create dialogue for Floating Action Button
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(inflater.inflate(R.layout.dialogue_progress_bar_staged, null));
+//        builder.setMessage("Please scan book barcode on bookshelf camera until camera light turns off..");
+        builder.setCancelable(false);
+
+        final AlertDialog dialog = builder.create();
+
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                accessUrl();
+                // add a book
+                dialog.show();
+                ProgressBar getInfoBar = (ProgressBar)dialog.findViewById(R.id.getinfo_progressbar);
+                getInfoBar.setVisibility(View.INVISIBLE);
+                mRpiInterface.addBook(dialog);
+
             }
         });
 
+        PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
         // initialize variables
         mBookShelf = BookShelf.getBookShelf();
         if ( mBookShelf.needsInit() )
         {
-            mBookShelf.init(this);
+            mBookShelf.init(this, Glide.with(this));
         }
         mLayoutManager = new LinearLayoutManager(this);
         mBookRVAdapter = new BookRVAdapter(mBookShelf.getBookList(),this);
@@ -79,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
             public void onRefresh() {
                 //try to update bookshelf
                 pRefreshBookshelf(refreshLayout);
+
             }
         });
 
@@ -101,7 +128,15 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            printDb();
+            // inflate settings fragment
+//            SettingsFragment settingsFrag = new SettingsFragment();
+//
+//            getFragmentManager().beginTransaction()
+//                    .replace(android.R.id.content, settingsFrag)
+//                    .addToBackStack(null)
+//                    .commit();
+            Intent intent = new Intent(this,PreferenceActivity.class);
+            startActivity(intent);
             return true;
         }
 
@@ -117,54 +152,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    // access server and grab db in content values
-    public void accessUrl() {
-        //final TextView ourText = (TextView) findViewById(R.id.textView);
 
-        // initialize return content values
-        SimpleHttp.get("http://192.168.1.141:5000", new SimpleHttpResponseHandler() {
-            @Override
-            public void onResponse(int responseCode, String responseBody) {
-                Toast.makeText(MainActivity.this, "Url received " + responseCode, Toast.LENGTH_SHORT).show();
-                JSONArray json = null;
-                ContentValues values;
-                if ( responseCode == 200 ) {
-                    try {
-                        json = new JSONArray(responseBody);
-                        values = new ContentValues();
-                        String result = "";
-                        // iterate through JSON array and print out results
-                        for ( int i = 0; i < json.length(); i++)
-                        {
-                            JSONObject row = json.getJSONObject(i);
-                            /*
-                            result = result + "ISBN: " + row.get("ISBN").toString() + "\n";
-                            result = result + "NAME: " + row.get("NAME").toString() + "\n";
-                            result = result + "\n";
-                            */
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_ISBN, row.get("ISBN").toString());
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_NAME, row.get("NAME").toString());
-                            //values.put(BookDatabaseContract.BookEntry.COL_NAME_WIDTH, row.get("WIDTH").toString());
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_WIDTH, 1);
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_CHECKED_IN, row.get("CHECKED_IN").toString());
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_ROW, row.get("ROW").toString());
-                            values.put(BookDatabaseContract.BookEntry.COL_NAME_POSITION, row.get("POSITION").toString());
-                            //addContentToDb(values);
-                            Book tempBook = new Book(row.getString("ISBN"),row.get("NAME").toString(),1,row.getInt("CHECKED_IN"),
-                                    row.getInt("ROW"),row.getInt("POSITION"),null,false);
-                            mBookShelf.addBook(tempBook);
-                        }
-                        //ourText.setText(result);
-
-                        // add this stuff to the db!
-                    } catch (JSONException e) {
-                        Log.e(SimpleHttp.TAG, e.getMessage());
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-    }
 
     public void addContentToDb( ContentValues values ) {
         // initialize database

@@ -8,6 +8,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.jonfouk.bookshelf.R;
 import com.jonfouk.bookshelf.Server.RpiInterface;
 import com.jonfouk.bookshelf.database.BookDatabaseContract;
 import com.jonfouk.bookshelf.database.BookDatabaseHelper;
@@ -30,16 +35,23 @@ public class BookShelf {
     private ArrayList<Book> mBookList;                  ///< dynamic array of books
     private int mNumBooks;                              ///< number of books
     private boolean mIsInit;                    ///< true if already initialized
+    private Context mContext;                   ///< copy of context
+    private RequestManager mGlide;
 
+    static {
+        mTheBookShelf = new BookShelf();
+    }
     // functions
     private BookShelf()
     {
         mNumBooks = 0;
         mIsInit = false;
     }
-    public void init(Context context) {
+    public void init(Context context, RequestManager glide) {
         mBookDatabase = new BookDatabaseHelper(context);
         mBookList = new ArrayList<Book>();
+        mContext = context;
+        mGlide = glide;
         readBookDb();
 
         // now that our booklist is initialized, we can get the number of books
@@ -49,10 +61,10 @@ public class BookShelf {
 
     public static BookShelf getBookShelf()
     {
-        if (mTheBookShelf == null)
-        {
-            mTheBookShelf = new BookShelf();
-        }
+//        if (mTheBookShelf == null)
+//        {
+//            mTheBookShelf = new BookShelf();
+//        }
         return mTheBookShelf;
     }
 
@@ -124,6 +136,9 @@ public class BookShelf {
                     "ISBN: " + book.getISBN() +
                     " Name: " + book.getName());
             mBookList.add( book );
+            // grab picture
+            grabBookImage(book.getISBN(),book.pictureUrl);
+
         }
         return rc;
     }
@@ -166,6 +181,7 @@ public class BookShelf {
         {
             book.checkedIn = 1;
             rc = addBook(book);
+            Log.i(TAG,"Checking in book: " + book.getISBN());
         }
         else
         {
@@ -174,6 +190,7 @@ public class BookShelf {
         return rc;
     }
 
+    // NOTE: This will be called by the RpiInterface, which other classes will call
     public boolean checkOutBook( Book book )
     {
         Boolean rc = false;
@@ -185,23 +202,22 @@ public class BookShelf {
             if ( mBookList.get(bookIndex).checkedIn == 1)
             {
                 // if book is checked in we can check it out
-                //@todo call api call to check out book
-                RpiInterface rpiInterface = RpiInterface.getRpiInterface();
-                // @note we pass in True if book is checked in because we want to check out
-                rpiInterface.checkOutBook(book,book.getCheckedIn()==1);
-                rc = true;
+                // update list and db with the new checked in status
+                book.checkedIn = 0; // book was just checked out!
+                rc = addBook(book);
+                Log.i(TAG,"Checking out book: " + book.getISBN());
             }
             else
             {
                 Log.d(TAG,"Book is already checkedout:" + book.getISBN());
             }
         }
-        if ( rc == true )
-        {
-            // update list and db with the new checked in status
-            book.checkedIn = 0; // book was just checked out!
-            rc = addBook(book);
-        }
+//        if ( rc == true )
+//        {
+//            // update list and db with the new checked in status
+//            book.checkedIn = 0; // book was just checked out!
+//            rc = addBook(book);
+//        }
         return rc;
 
     }
@@ -242,9 +258,12 @@ public class BookShelf {
                 BookDatabaseContract.BookEntry.COL_NAME_ISBN,
                 BookDatabaseContract.BookEntry.COL_NAME_NAME,
                 BookDatabaseContract.BookEntry.COL_NAME_WIDTH,
+                BookDatabaseContract.BookEntry.COL_NAME_AUTHOR,
                 BookDatabaseContract.BookEntry.COL_NAME_CHECKED_IN,
                 BookDatabaseContract.BookEntry.COL_NAME_ROW,
                 BookDatabaseContract.BookEntry.COL_NAME_POSITION,
+                BookDatabaseContract.BookEntry.COL_NAME_LAST_DATE,
+                BookDatabaseContract.BookEntry.COL_NAME_PICTURE_URL,
                 BookDatabaseContract.BookEntry.COL_NAME_COVER_IMAGE,
                 BookDatabaseContract.BookEntry.COL_NAME_IMAGE_FETCHED,
         };
@@ -278,9 +297,12 @@ public class BookShelf {
                     new Book(cursor.getString( cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_ISBN)),
                             cursor.getString(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_NAME)),
                             cursor.getFloat(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_WIDTH)),
+                            cursor.getString(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_AUTHOR)),
                             cursor.getInt(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_CHECKED_IN)),
                             cursor.getInt(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_ROW)),
                             cursor.getFloat(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_POSITION)),
+                            cursor.getString(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_LAST_DATE)),
+                            cursor.getString(cursor.getColumnIndex(BookDatabaseContract.BookEntry.COL_NAME_PICTURE_URL)),
                             picture,
                             imageFetched));
         }
@@ -304,9 +326,12 @@ public class BookShelf {
         values.put(BookDatabaseContract.BookEntry.COL_NAME_ISBN,book.ISBN);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_NAME,book.name);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_WIDTH,book.width);
+        values.put(BookDatabaseContract.BookEntry.COL_NAME_AUTHOR,book.author);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_CHECKED_IN,book.checkedIn);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_ROW,book.row);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_POSITION,book.position);
+        values.put(BookDatabaseContract.BookEntry.COL_NAME_LAST_DATE,book.lastDate);
+        values.put(BookDatabaseContract.BookEntry.COL_NAME_PICTURE_URL, book.pictureUrl);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_COVER_IMAGE, image);
         values.put(BookDatabaseContract.BookEntry.COL_NAME_IMAGE_FETCHED, book.isImageFetched());
 
@@ -373,4 +398,15 @@ public class BookShelf {
         return BitmapFactory.decodeByteArray(image, 0, image.length);
     }
 
+    private void grabBookImage( final String ISBN, String url )
+    {
+
+        Log.i(BookShelf.TAG,"Grabbing book image from " + url);
+        mGlide.load(url).asBitmap().error(R.mipmap.ic_launcher).into(new SimpleTarget<Bitmap>(){
+            @Override
+            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                setPicture(ISBN,resource);
+            }
+        });
+    }
 }

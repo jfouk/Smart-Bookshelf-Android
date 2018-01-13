@@ -29,13 +29,13 @@ public class BookRVAdapter extends RecyclerView.Adapter<BookRVAdapter.BookViewHo
     public class BookViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         CardView cv;
         TextView BookName;
-        TextView ISBN;
+        TextView Author;
 
         BookViewHolder(View itemView) {
             super(itemView);
             cv = (CardView)itemView.findViewById(R.id.cv);
             BookName = (TextView) itemView.findViewById(R.id.book_name);
-            ISBN = (TextView)itemView.findViewById(R.id.ISBN);
+            Author = (TextView)itemView.findViewById(R.id.author);
             itemView.setOnClickListener(this);
         }
 
@@ -51,6 +51,8 @@ public class BookRVAdapter extends RecyclerView.Adapter<BookRVAdapter.BookViewHo
     }
     List<Book> books;
     protected Context mContext;
+    public static final String TAG="RVAdapter";
+
 
     public BookRVAdapter(List<Book> books, Context context)
     {
@@ -73,14 +75,8 @@ public class BookRVAdapter extends RecyclerView.Adapter<BookRVAdapter.BookViewHo
     @Override
     public void onBindViewHolder(BookViewHolder holder, int position) {
         holder.BookName.setText(books.get(position).name);
-        holder.ISBN.setText(books.get(position).ISBN);
+        holder.Author.setText(books.get(position).author);
 
-        // if image is not already set, grab book image
-        Book thisBook = books.get(position);
-        if ( !thisBook.isImageFetched())
-        {
-            grabBookImage(thisBook.getISBN());
-        }
     }
 
     @Override
@@ -92,7 +88,7 @@ public class BookRVAdapter extends RecyclerView.Adapter<BookRVAdapter.BookViewHo
     {
         // build url from openlibrary
         String url = "http://covers.openlibrary.org/b/isbn/" + ISBN + "-L.jpg";
-        Log.d(BookShelf.TAG,"Grabbing book image from " + url);
+        Log.i(BookShelf.TAG,"Grabbing book image from " + url);
         Glide.with(mContext).load(url).asBitmap().error(R.mipmap.ic_launcher).into(new SimpleTarget<Bitmap>(){
             @Override
             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {

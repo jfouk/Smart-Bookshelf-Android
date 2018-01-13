@@ -19,6 +19,9 @@ public final class BookDatabaseContract {
                     + BookEntry.COL_NAME_CHECKED_IN + BookEntry.COL_TYPE_CHECKED_IN + ","
                     + BookEntry.COL_NAME_ROW + BookEntry.COL_TYPE_ROW + ","
                     + BookEntry.COL_NAME_POSITION + BookEntry.COL_TYPE_POSITION + ","
+                    + BookEntry.COL_NAME_AUTHOR + BookEntry.COL_TYPE_AUTHOR + ","
+                    + BookEntry.COL_NAME_LAST_DATE + BookEntry.COL_TYPE_LAST_DATE + ","
+                    + BookEntry.COL_NAME_PICTURE_URL + BookEntry.COL_TYPE_PICTURE_URL + ","
                     + BookEntry.COL_NAME_COVER_IMAGE + BookEntry.COL_TYPE_COVER_IMAGE + ","
                     + BookEntry.COL_NAME_IMAGE_FETCHED + BookEntry.COL_TYPE_IMAGE_FETCHED + ")";
 
@@ -38,6 +41,9 @@ public final class BookDatabaseContract {
         public static final String COL_NAME_POSITION ="POSITION";
         public static final String COL_NAME_COVER_IMAGE = "COVER_IMAGE";
         public static final String COL_NAME_IMAGE_FETCHED = "IMAGE_FETCHED";
+        public static final String COL_NAME_AUTHOR = "AUTHOR";
+        public static final String COL_NAME_LAST_DATE = "LAST_DATE";    //date stored as a string yyyy-mm-dd
+        public static final String COL_NAME_PICTURE_URL = "PIC_URL";
 
         // types
         public static final String COL_TYPE_ISBN = " TEXT";
@@ -48,6 +54,9 @@ public final class BookDatabaseContract {
         public static final String COL_TYPE_POSITION =" REAL";
         public static final String COL_TYPE_COVER_IMAGE = " BLOB";
         public static final String COL_TYPE_IMAGE_FETCHED = " INT";
+        public static final String COL_TYPE_AUTHOR = " TEXT";
+        public static final String COL_TYPE_LAST_DATE = " TEXT";
+        public static final String COL_TYPE_PICTURE_URL = " TEXT";
 
     }
 

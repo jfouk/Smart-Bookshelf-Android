@@ -1,5 +1,6 @@
 package com.jonfouk.bookshelf;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.jonfouk.bookshelf.BookshelfMgr.Book;
 import com.jonfouk.bookshelf.BookshelfMgr.BookShelf;
 import com.jonfouk.bookshelf.Server.RpiInterface;
@@ -25,6 +27,8 @@ public class BookDetail extends AppCompatActivity {
 
     public static final String TAG="BookDetail";
     private Book mBook;
+    public final BookDetail mRef = this;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,7 +48,7 @@ public class BookDetail extends AppCompatActivity {
         BookShelf bookshelf = BookShelf.getBookShelf();
         if ( bookshelf.needsInit())
         {
-            bookshelf.init(this);
+            bookshelf.init(this, Glide.with(this));
         }
 
         // get the book and check if it's null
@@ -74,17 +78,9 @@ public class BookDetail extends AppCompatActivity {
         checkOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BookShelf bookshelf = BookShelf.getBookShelf();
-                // check in/out book and update text
-                if ( mBook.getCheckedIn()==1 ) //checked in so checkout @TODO remove this
-                {
-                    bookshelf.checkOutBook(mBook);
-                }
-                else
-                {
-                    bookshelf.checkInBook(mBook);
-                }
-                updateCheckInButton();
+
+                RpiInterface rpiInterface = RpiInterface.getRpiInterface();
+                rpiInterface.checkOutBook(mBook,mBook.getCheckedIn()==1, mRef,BookDetail.this);
             }
         });
 
@@ -108,6 +104,31 @@ public class BookDetail extends AppCompatActivity {
             checkedInInfo.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
         }
         return;
+    }
+
+    // update the book values (in case anything changed, since we can't hold a pointer to the object)
+    public void updateBook() {
+        // get temporary bookshelf
+        BookShelf bookshelf = BookShelf.getBookShelf();
+        if ( bookshelf.needsInit())
+        {
+            bookshelf.init(this, Glide.with(this));
+        }
+
+        Book book = bookshelf.getBook(mBook.getISBN());
+        if (book != null)
+        {
+            // save a copy of the current book
+            mBook = book;
+            Log.i(TAG,"is Checked in?" + mBook.getCheckedIn());
+            printBookInfo(book);
+        }
+        else    // if can't find book, exit now
+        {
+            Log.e(TAG,"Unable to find book " + mBook.getISBN());
+            Toast.makeText(this,"Unable to find book " + mBook.getISBN(),Toast.LENGTH_LONG);
+            finish();
+        }
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -162,12 +183,25 @@ public class BookDetail extends AppCompatActivity {
        final TextView book_title = (TextView) findViewById(R.id.book_title);
        final TextView book_author = (TextView) findViewById(R.id.author);
        final ImageView book_image = (ImageView) findViewById(R.id.book_image);
+       final TextView last_date = (TextView) findViewById(R.id.last_date);
 
        String author = "";
-       author = author + book.getISBN();
+       author = author + book.getAuthor();
        book_title.setText(book.getName());
        book_author.setText(author);
        book_image.setImageBitmap(book.getCoverImage());
+
+       // set last date text
+       if (book.getCheckedIn() == 1)
+       {
+           // if book is checked in, last checked in date
+           last_date.setText("Last checked in: "+book.getLastDate());
+       }
+       else
+       {
+           // otherwise, last checked out date
+           last_date.setText("Last checked out: " + book.getLastDate());
+       }
        updateCheckInButton();
 
 

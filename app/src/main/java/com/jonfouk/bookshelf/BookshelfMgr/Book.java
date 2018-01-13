@@ -31,6 +31,18 @@ public class Book {
         return position;
     }
 
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getLastDate() {
+        return lastDate;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
     public Bitmap getCoverImage() {
         return coverImage;
     }
@@ -50,28 +62,32 @@ public class Book {
     String ISBN;       ///< ISBN of the book
     String name;    ///< name of the book
     float width;    ///< width of the book
+    String author;  ///< author of book
+
 
     /// bookshelf info
     int checkedIn;  ///< if the book is checked in or not
     int row;            ///< which row the book is on
     float position;     ///< position along the row that the book is on
+    String lastDate;    ///< last date this book was moved
 
     // book cover, not saved in physical bookshelf
+    String pictureUrl;  ///< url from which to grab the picture
     Bitmap coverImage;  ///< book cover, only set this on add book
     boolean imageFetched;   ///< is the book image fetched?
 
-
-    ///  so not to slow things down
-    /// @brief constructor
-    public Book(String ISBN, String name, float width,
-                int checkedIn, int row, float position,
-                Bitmap coverImage, boolean imageFetched) {
+    public Book(String ISBN, String name, float width, String author, int checkedIn, int row,
+                float position, String lastDate,
+                String pictureUrl, Bitmap coverImage, boolean imageFetched) {
         this.ISBN = ISBN;
         this.name = name;
         this.width = width;
+        this.author = author;
         this.checkedIn = checkedIn;
         this.row = row;
         this.position = position;
+        this.lastDate = lastDate;
+        this.pictureUrl = pictureUrl;
         this.coverImage = coverImage;
         this.imageFetched = imageFetched;
     }
