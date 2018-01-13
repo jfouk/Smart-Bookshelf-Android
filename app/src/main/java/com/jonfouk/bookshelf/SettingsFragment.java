@@ -36,6 +36,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             Log.i("PREF","row_num changed");
             createRows();
         }
+        changeIP();
     }
 
     @Override
@@ -75,11 +76,18 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             }
         }
     }
+
+    private void changeIP()
+    {
+        EditTextPreference ipPref = (EditTextPreference)this.getPreferenceScreen().findPreference("ip_addr");
+        ipPref.setSummary(ipPref.getText());
+    }
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
         createRows();
+        changeIP();
 
     }
 

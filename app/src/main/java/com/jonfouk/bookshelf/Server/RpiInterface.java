@@ -56,7 +56,7 @@ public class RpiInterface {
     public static final String add_route="/add";
     /// Connection info
     public static String base_addr = "192.168.1.141";
-    public static String web_addr = "http://192.168.1.141";
+    public static String web_addr = "http://" + base_addr;
     public static String port = ":5000";
     public static String request_addr = web_addr+port;
     public static String delete_addr = web_addr+port+delete_route;
@@ -91,6 +91,8 @@ public class RpiInterface {
             Log.e(TAG,"Init: Bookshelf not initialized!");
         }
         this.mRvAdapter = rvAdapter;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        setBase_addr(sharedPref.getString("ip_addr","0"));
         mIsInit = true;
     }
 
@@ -120,12 +122,15 @@ public class RpiInterface {
     //      numLeds
     public void initShelf(Context context)
     {
+        // Set IP address
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        int rowNum = Integer.parseInt(sharedPref.getString("row_num","0"));
+        setBase_addr(sharedPref.getString("ip_addr","0"));
         // first ping bookshelf
         Boolean rc = pPingBookshelf();
         if ( rc == true ) { //no need to check for error case since messages already logged
             // get preference values
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-            int rowNum = Integer.parseInt(sharedPref.getString("row_num","0"));
+
             Map<String, String> params = new HashMap<>();
             params.put("ledWidth", sharedPref.getString("ledWidth","0"));
             params.put("offset", sharedPref.getString("offset","0"));
@@ -438,6 +443,7 @@ public class RpiInterface {
         // ping to check if network is reachable
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
+        Log.d(TAG,base_addr);
         try {
             //if (InetAddress.getByName(mRpiInterface.getBase_addr()).isReachable(1000))
             if (InetAddress.getByName(base_addr).isReachable(500))
